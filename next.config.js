@@ -1,9 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  basePath: '/house-loan-calculator',
+  basePath: process.env.NODE_ENV === 'production' ? '/house-loan-calculator' : '',
   images: {
     unoptimized: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 }
 

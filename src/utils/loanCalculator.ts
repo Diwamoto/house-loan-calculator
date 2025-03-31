@@ -92,7 +92,7 @@ export const calculateInvestmentResult = (
 // 税制考慮後の投資結果を計算
 export const calculateInvestmentWithTax = (
   investmentResult: number,
-  years: number
+  _years: number // 未使用のパラメータを_で明示
 ): number => {
   if (investmentResult === -1) {
     return -1; // 投資不可能を示す
@@ -158,9 +158,10 @@ const calculateRemainingLoan = (params: LoanParameters, yearsToSale: number): nu
   const monthlyRate = params.interestRate / 100 / 12;
   const totalMonths = params.years * 12;
   const monthsToSale = yearsToSale * 12;
+  const remainingMonths = totalMonths - monthsToSale;
   
   // 残債 = 月々の返済額 × (1 - (1 + 月利)^(残り月数)) / 月利
-  return monthlyPayment * (1 - Math.pow(1 + monthlyRate, -(totalMonths - monthsToSale))) / monthlyRate;
+  return monthlyPayment * (1 - Math.pow(1 + monthlyRate, -remainingMonths)) / monthlyRate;
 };
 
 // 繰上げ返済による利息削減額を計算
@@ -183,14 +184,14 @@ const calculateInterestReduction = (
   // 元々の残り返済期間での利息総額を計算
   const originalInterest = calculateTotalInterest({
     amount: remainingLoan,
-    years: (remainingMonths / 12),
+    years: remainingMonths / 12,
     interestRate: params.interestRate
   });
   
   // 繰上げ返済後の残り返済期間での利息総額を計算
   const newInterest = newRemainingLoan > 0 ? calculateTotalInterest({
     amount: newRemainingLoan,
-    years: (remainingMonths / 12),
+    years: remainingMonths / 12,
     interestRate: params.interestRate
   }) : 0;
   

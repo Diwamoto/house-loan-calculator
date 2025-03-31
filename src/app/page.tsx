@@ -16,12 +16,6 @@ export default function Home() {
   useEffect(() => {
     const calculatedResult = calculateLoan(params);
     setResult(calculatedResult);
-  }, []);
-
-  // パラメータが変更されるたびに計算を実行
-  useEffect(() => {
-    const calculatedResult = calculateLoan(params);
-    setResult(calculatedResult);
   }, [params]);
 
   const formatCurrency = (amount: number): string => {
