@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --aws-bg-color: #232f3e;
+  --aws-nav-color: #151c25;
+  --aws-orange: #ff9900;
+  --aws-link: #0073bb;
+  --aws-border: #e3e3e3;
 }
 
 @theme inline {
@@ -23,4 +43,100 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  background-color: #f2f3f3;
+}
+
+.aws-header {
+  background-color: var(--aws-bg-color);
+  color: white;
+  border-bottom: 1px solid var(--aws-nav-color);
+}
+
+.aws-nav {
+  background-color: var(--aws-nav-color);
+  color: white;
+}
+
+.aws-button {
+  background-color: #ff9900 !important;
+  border-color: #e88b01 !important;
+  color: #000000 !important;
+}
+
+.aws-button:hover {
+  background-color: #e88b01 !important;
+}
+
+.aws-input {
+  border-color: #d5dbdb !important;
+  border-radius: 2px !important;
+}
+
+.aws-input:focus {
+  border-color: var(--aws-orange) !important;
+  box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.2) !important;
+}
+
+.aws-card {
+  border: 1px solid var(--aws-border);
+  border-radius: 6px;
+  box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.1), 0 1px 3px 0 rgba(0, 28, 36, 0.1);
+}
+
+.aws-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Range Slider Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #eaeded;
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border: 2px solid var(--aws-orange);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: white;
+  border: 2px solid var(--aws-orange);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--aws-orange);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: var(--aws-orange);
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.2);
+}
+
+input[type="range"]:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.2);
 }
