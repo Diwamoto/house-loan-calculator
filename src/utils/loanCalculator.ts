@@ -2,6 +2,7 @@ export interface LoanParameters {
   amount: number; // 借入額
   years: number; // 返済期間（30年または35年）
   interestRate: number; // 年利（%）
+  propertyTax: number; // 固定資産税
 }
 
 export interface LoanResult {
@@ -16,7 +17,6 @@ export interface LoanResult {
   months: number; // 返済月数
   rentalCost: number; // 賃貸物件の合計金額
   investmentResult: number; // NISA投資の結果
-  investmentWithTax: number; // 税制考慮後の投資結果
   yearsToMatch: number; // 投資結果と返済総額が一致する年数
   taxBenefits: { // 税制優遇措置
     mortgageDeduction: number; // 住宅ローン減税（13年間の合計額）
@@ -30,7 +30,7 @@ export interface LoanResult {
     interestReduction: number; // 繰上げ返済による利息削減額
     saleProfit: number; // 売却益（売却金額 - 残債）
     yearsFromPurchase: number; // 購入からの経過年数
-    investmentAtSale: number; // 売却時点での投資収益（税引後）
+    investmentAtSale: number; // 売却時点での投資収益
     totalProfit: number; // 売却益 + 投資収益
   };
 }
@@ -83,27 +83,18 @@ export const calculateInvestmentResult = (
   
   let result = investmentAmount;
   for (let i = 0; i < years; i++) {
-    result = result * (1 + annualReturn) + (monthlyInvestment * 12);
+    // 前年の残高に年利を適用
+    result = result * (1 + annualReturn);
+    // その年の投資額を加算（複利計算の対象外）
+    result += monthlyInvestment * 12;
   }
   
   return result;
 };
 
-// 税制考慮後の投資結果を計算
-export const calculateInvestmentWithTax = (
-  investmentResult: number,
-  _years: number // 未使用のパラメータを_で明示
-): number => {
-  if (investmentResult === -1) {
-    return -1; // 投資不可能を示す
-  }
-  const taxRate = 0.20315; // 20.315%（所得税15% + 復興特別所得税0.315% + 住民税5%）
-  return investmentResult * (1 - taxRate);
-};
-
 // 投資結果と返済総額が一致する年数を計算
 export const calculateYearsToMatch = (
-  investmentWithTax: number,
+  investmentResult: number,
   totalPayment: number,
   monthlyPayment: number
 ): number => {
@@ -153,7 +144,7 @@ const calculateRegistrationTaxReduction = (amount: number): number => {
 };
 
 // 売却時の残債を計算
-const calculateRemainingLoan = (params: LoanParameters, yearsToSale: number): number => {
+export const calculateRemainingLoan = (params: LoanParameters, yearsToSale: number): number => {
   const monthlyPayment = calculateMonthlyPayment(params);
   const monthlyRate = params.interestRate / 100 / 12;
   const totalMonths = params.years * 12;
@@ -185,14 +176,16 @@ const calculateInterestReduction = (
   const originalInterest = calculateTotalInterest({
     amount: remainingLoan,
     years: remainingMonths / 12,
-    interestRate: params.interestRate
+    interestRate: params.interestRate,
+    propertyTax: params.propertyTax
   });
   
   // 繰上げ返済後の残り返済期間での利息総額を計算
   const newInterest = newRemainingLoan > 0 ? calculateTotalInterest({
     amount: newRemainingLoan,
     years: remainingMonths / 12,
-    interestRate: params.interestRate
+    interestRate: params.interestRate,
+    propertyTax: params.propertyTax
   }) : 0;
   
   // 利息削減額 = 元々の利息総額 - 繰上げ返済後の利息総額
@@ -218,14 +211,20 @@ const calculateBreakEvenYear = (params: LoanParameters, monthlyPayment: number):
   while (year <= MAX_YEARS) {
     const saleAmount = params.amount * 0.6; // 借入額の60%で売却
     const remainingLoan = calculateRemainingLoan(params, year);
-    const saleProfit = saleAmount - remainingLoan;
+    
+    // 住宅ローン減税の計算（13年間の合計額）
+    const annualDeduction = Math.min(params.amount * 0.007, 200000);
+    const mortgageDeduction = Math.min(year, 13) * annualDeduction;
+    
+    // 固定資産税の累計額
+    const totalPropertyTax = params.propertyTax * year;
+    
+    // 売却益 = 売却金額 - 残債 + 住宅ローン減税 - 固定資産税累計
+    const saleProfit = saleAmount - remainingLoan + mortgageDeduction - totalPropertyTax;
     
     // その時点での投資収益を計算
     const investmentAtSale = monthlyPayment >= 100000 ? 0 : 
-      calculateInvestmentWithTax(
-        calculateInvestmentResult(monthlyPayment, year, 100000),
-        year
-      );
+      calculateInvestmentResult(monthlyPayment, year, 100000);
     
     // 売却益と投資収益の合計が残債を超えた時点の年数を返す
     if (saleProfit + investmentAtSale >= 0) {
@@ -251,14 +250,13 @@ export const calculateLoan = (params: LoanParameters): LoanResult => {
   const totalPayment = monthlyPayment * params.years * 12;
   const totalInterest = totalPayment - params.amount;
   
-  const propertyTax = calculatePropertyTax(params.amount);
+  const propertyTax = params.propertyTax; // 入力値を使用
   const cityTax = calculateCityTax(params.amount);
   const totalTax = propertyTax + cityTax;
   
   const rentalCost = calculateRentalCost(params.years);
   const investmentResult = calculateInvestmentResult(monthlyPayment, params.years, 100000);
-  const investmentWithTax = calculateInvestmentWithTax(investmentResult, params.years);
-  const yearsToMatch = calculateYearsToMatch(investmentWithTax, totalPayment, monthlyPayment);
+  const yearsToMatch = calculateYearsToMatch(investmentResult, totalPayment, monthlyPayment);
 
   // 税制優遇措置の計算
   const mortgageDeduction = calculateMortgageDeduction(params.amount, params.years);
@@ -287,7 +285,6 @@ export const calculateLoan = (params: LoanParameters): LoanResult => {
     months: params.years * 12,
     rentalCost,
     investmentResult,
-    investmentWithTax,
     yearsToMatch,
     taxBenefits: {
       mortgageDeduction,
